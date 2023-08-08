@@ -37,6 +37,7 @@ router.post("/", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
+    const {text, id} = req.body;
     const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
     const collection = client.db(dbName).collection(collectionName);
 
@@ -47,7 +48,7 @@ router.get("/", async (req, res) => {
       embeddingKey: "embedding", // The name of the collection field containing the embedded text. Defaults to "embedding"
     });
 
-    const resultOne = await vectorStore.similaritySearch("Hello world", 1);
+    const resultOne = await vectorStore.similaritySearch(text, id);
 
     await client.close();
     return res.send(resultOne);
