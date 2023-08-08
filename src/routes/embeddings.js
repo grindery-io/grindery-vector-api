@@ -8,7 +8,7 @@ const router = express.Router();
 const namespace = "grindery-vector.default";
 const [dbName, collectionName] = namespace.split(".");
 
-router.post("/vector-search", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const {texts, ids} = req.body;
     const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
@@ -35,7 +35,7 @@ router.post("/vector-search", async (req, res) => {
   return res.status(500).send();
 });
 
-router.get("/vector-search", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
     const collection = client.db(dbName).collection(collectionName);
