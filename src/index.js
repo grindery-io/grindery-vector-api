@@ -5,6 +5,24 @@ import bodyParser from "body-parser";
 const app = express();
 const PORT = 3000;
 
+// Enable CORS
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "X-CSRFToken, Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.header("Access-Control-Allow-Credentials", true);
+  res.header("Access-Control-Allow-Methods", "HEAD,OPTIONS,GET,POST,PUT,PATCH,DELETE");
+
+  if (req.method === "OPTIONS") {
+    // Return OK response for CORS preflight
+    res.json({ message: "Ok" });
+  } else {
+    next();
+  }
+});
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
