@@ -1,5 +1,5 @@
 {
-  "name": "grindery-v-db",
+  "name": "grindery-vector-api",
   "type": "module",
   "version": "1.0.0",
   "description": "",
@@ -20,5 +20,8 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.21"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
