@@ -4,19 +4,36 @@ import {MongoDBAtlasVectorSearch} from "langchain/vectorstores/mongodb_atlas";
 import {OpenAIEmbeddings} from "langchain/embeddings/openai";
 import "dotenv/config";
 
+import {CheerioWebBaseLoader} from "langchain/document_loaders/web/cheerio";
+import {RecursiveCharacterTextSplitter} from "langchain/text_splitter";
+
+import {ChatOpenAI} from "langchain/chat_models/openai";
+import {RetrievalQAChain} from "langchain/chains";
+
 const router = express.Router();
 const namespace = "grindery-vector.default";
 const [dbName, collectionName] = namespace.split(".");
 
 router.post("/", async (req, res) => {
   try {
-    const {texts, ids} = req.body;
+    const {metadata} = req.body;
     const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
     const collection = client.db(dbName).collection(collectionName);
+    const loader = new CheerioWebBaseLoader(metadata.url);
+    const data = await loader.load();
+    data.filter((data) => {
+      data.metadata.agent = metadata.agent;
+      data.metadata.tag = metadata.tag;
+    });
 
-    await MongoDBAtlasVectorSearch.fromTexts(
-      texts,
-      ids,
+    const textSplitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 500,
+      chunkOverlap: 0,
+    });
+    const splitDocs = await textSplitter.splitDocuments(data);
+
+    await MongoDBAtlasVectorSearch.fromDocuments(
+      splitDocs,
       new OpenAIEmbeddings(),
       {
         collection,
@@ -25,8 +42,8 @@ router.post("/", async (req, res) => {
         embeddingKey: "embedding", // The name of the collection field containing the embedded text. Defaults to "embedding"
       }
     );
-
     await client.close();
+
     return res.send();
   } catch (error) {
     console.log("Error: ", error);
@@ -47,11 +64,17 @@ router.post("/vector-search", async (req, res) => {
       textKey: "text", // The name of the collection field containing the raw content. Defaults to "text"
       embeddingKey: "embedding", // The name of the collection field containing the embedded text. Defaults to "embedding"
     });
+    const model = new ChatOpenAI({modelName: "gpt-3.5-turbo"});
+    const chain = RetrievalQAChain.fromLLM(model, vectorStore.asRetriever(), {
+      returnSourceDocuments: true,
+    });
 
-    const resultOne = await vectorStore.similaritySearch(text);
+    const response = await chain.call({
+      query: text,
+    });
 
     await client.close();
-    return res.send(resultOne);
+    return res.send(response);
   } catch (error) {
     console.log("Error: ", error);
   }
