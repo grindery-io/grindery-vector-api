@@ -2,13 +2,12 @@ import express from "express";
 import {MongoClient} from "mongodb";
 import {MongoDBAtlasVectorSearch} from "langchain/vectorstores/mongodb_atlas";
 import {OpenAIEmbeddings} from "langchain/embeddings/openai";
-import "dotenv/config";
-
 import {CheerioWebBaseLoader} from "langchain/document_loaders/web/cheerio";
 import {RecursiveCharacterTextSplitter} from "langchain/text_splitter";
-
+import {PromptTemplate} from "langchain/prompts";
 import {ChatOpenAI} from "langchain/chat_models/openai";
 import {RetrievalQAChain} from "langchain/chains";
+import "dotenv/config";
 
 const router = express.Router();
 const namespace = "grindery-vector.default";
@@ -65,8 +64,14 @@ router.post("/vector-search", async (req, res) => {
       embeddingKey: "embedding", // The name of the collection field containing the embedded text. Defaults to "embedding"
     });
     const model = new ChatOpenAI({modelName: "gpt-3.5-turbo"});
+    const template = `Remove the words "vector this" from the request message
+                      Always say "thanks for asking!" at the end of the answer.
+                      {context}
+                      Question: {question}
+                      Helpful Answer:`;
     const chain = RetrievalQAChain.fromLLM(model, vectorStore.asRetriever(), {
       returnSourceDocuments: true,
+      prompt: PromptTemplate.fromTemplate(template),
     });
 
     const response = await chain.call({
