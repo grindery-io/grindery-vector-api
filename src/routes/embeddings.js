@@ -35,7 +35,7 @@ router.post("/", async (req, res) => {
   return res.status(500).send();
 });
 
-router.get("/", async (req, res) => {
+router.post("/vector-search", async (req, res) => {
   try {
     const {text} = req.body;
     const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
@@ -59,7 +59,7 @@ router.get("/", async (req, res) => {
   return res.status(500).send();
 });
 
-router.get("/vector-search/relevance", async (req, res) => {
+router.post("/vector-search/relevance", async (req, res) => {
   try {
     const {text} = req.body;
 
