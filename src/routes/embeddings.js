@@ -81,9 +81,8 @@ router.post("/vector-search", async (req, res) => {
     return res.send(response);
   } catch (error) {
     console.log("Error: ", error);
+    return res.status(500).send(error);
   }
-
-  return res.status(500).send();
 });
 
 router.post("/vector-search/relevance", async (req, res) => {
