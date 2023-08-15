@@ -42,7 +42,6 @@ router.post("/", async (req, res) => {
       }
     );
     await client.close();
-
     return res.send();
   } catch (error) {
     console.log("Error: ", error);
@@ -63,8 +62,9 @@ router.post("/vector-search", async (req, res) => {
       textKey: "text", // The name of the collection field containing the raw content. Defaults to "text"
       embeddingKey: "embedding", // The name of the collection field containing the embedded text. Defaults to "embedding"
     });
-    const model = new ChatOpenAI({modelName: "gpt-3.5-turbo"});
-    const template = `Remove the words "vector this" from the request message
+    const model = new ChatOpenAI({modelName: "gpt-4"});
+    const template = `Use the following pieces of context to answer the question at the end.
+                      If you don't know the answer, just say that you don't know, don't try to make up an answer.
                       Always say "thanks for asking!" at the end of the answer.
                       {context}
                       Question: {question}
@@ -77,7 +77,6 @@ router.post("/vector-search", async (req, res) => {
     const response = await chain.call({
       query: text,
     });
-
     await client.close();
     return res.send(response);
   } catch (error) {
