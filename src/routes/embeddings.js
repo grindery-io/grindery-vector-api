@@ -25,10 +25,7 @@ router.post("/", async (req, res) => {
       data.metadata.tag = metadata.tag;
     });
 
-    const textSplitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 500,
-      chunkOverlap: 0,
-    });
+    const textSplitter = new RecursiveCharacterTextSplitter();
     const splitDocs = await textSplitter.splitDocuments(data);
 
     await MongoDBAtlasVectorSearch.fromDocuments(
@@ -69,7 +66,15 @@ router.post("/vector-search", async (req, res) => {
                       {context}
                       Question: {question}
                       Helpful Answer:`;
-    const chain = RetrievalQAChain.fromLLM(model, vectorStore.asRetriever(), {
+
+    const retriever = vectorStore.asRetriever({
+      searchType: "mmr",
+      searchKwargs: {
+        fetchK: 20,
+        lambda: 0.1,
+      },
+    });
+    const chain = RetrievalQAChain.fromLLM(model, retriever, {
       returnSourceDocuments: true,
       prompt: PromptTemplate.fromTemplate(template),
     });
