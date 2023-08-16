@@ -25,7 +25,10 @@ router.post("/", async (req, res) => {
       data.metadata.tag = metadata.tag;
     });
 
-    const textSplitter = new RecursiveCharacterTextSplitter();
+    const textSplitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 500,
+      chunkOverlap: 0,
+    });
     const splitDocs = await textSplitter.splitDocuments(data);
 
     await MongoDBAtlasVectorSearch.fromDocuments(
@@ -70,7 +73,7 @@ router.post("/vector-search", async (req, res) => {
     const retriever = vectorStore.asRetriever({
       searchType: "mmr",
       searchKwargs: {
-        fetchK: 20,
+        fetchK: 200,
         lambda: 0.1,
       },
     });
@@ -88,39 +91,6 @@ router.post("/vector-search", async (req, res) => {
     console.log("Error: ", error);
     return res.status(500).send(error);
   }
-});
-
-router.post("/vector-search/relevance", async (req, res) => {
-  try {
-    const {text} = req.body;
-
-    const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
-    const collection = client.db(dbName).collection(collectionName);
-
-    const vectorStore = new MongoDBAtlasVectorSearch(new OpenAIEmbeddings(), {
-      collection,
-      indexName: "default", // The name of the Atlas search index. Defaults to "default"
-      textKey: "text", // The name of the collection field containing the raw content. Defaults to "text"
-      embeddingKey: "embedding", // The name of the collection field containing the embedded text. Defaults to "embedding"
-    });
-
-    // Using MMR in a vector store retriever
-    const retriever = vectorStore.asRetriever({
-      searchType: "mmr",
-      searchKwargs: {
-        fetchK: 20,
-        lambda: 0.1,
-      },
-    });
-    const retrieverOutput = await retriever.getRelevantDocuments(text);
-
-    await client.close();
-    res.send(retrieverOutput);
-  } catch (error) {
-    console.log("Error: ", error);
-  }
-
-  return res.status(500).send();
 });
 
 router.delete("/", async (req, res) => {
